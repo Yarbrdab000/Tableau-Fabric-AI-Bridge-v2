@@ -1,4 +1,5 @@
 {
   "name": "Tableau-Fabric-AI-Bridge",
-  "build": { "dockerfile": "Dockerfile" }
+  "build": { "dockerfile": "Dockerfile" },
+  "postCreateCommand": "pip3 install requests azure-identity azure-keyvault-secrets --break-system-packages"
 }
