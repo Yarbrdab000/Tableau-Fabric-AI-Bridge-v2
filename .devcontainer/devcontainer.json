@@ -1,0 +1,12 @@
+{
+  "name": "Tableau-Fabric-AI-Bridge",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/powershell:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "postCreateCommand": "pip install requests azure-identity azure-keyvault-secrets --break-system-packages"
+}
