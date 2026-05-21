@@ -4,11 +4,10 @@ import json
 import logging
 from azure.identity import ManagedIdentityCredential
 from azure.keyvault.secrets import SecretClient
+import os
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
-# These get set as Function App environment variables by the deploy script
-import os
 KV_URL = os.environ["KV_URL"]
 KV_SECRET_NAME = os.environ["KV_SECRET_NAME"]
 TABLEAU_POD = os.environ["TABLEAU_POD"]
@@ -30,16 +29,19 @@ def get_tableau_token(pat_name, pat_value, pod, site):
             "site": {"contentUrl": site}
         }
     }
-    resp = requests.post(url, json=payload)
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    resp = requests.post(url, json=payload, headers=headers)
     resp.raise_for_status()
     data = resp.json()
     return data["credentials"]["token"], data["credentials"]["site"]["id"]
 
-def get_logical_table_id(token, pod, site_id, datasource_luid):
+def get_logical_table_id(token, pod, datasource_luid):
     url = f"https://{pod}/api/v1/vizql-data-service/read-metadata"
     headers = {"x-tableau-auth": token, "Content-Type": "application/json"}
     payload = {"datasource": {"datasourceLuid": datasource_luid}}
     resp = requests.post(url, json=payload, headers=headers)
+    logging.info(f"read-metadata status: {resp.status_code}")
+    logging.info(f"read-metadata body: {resp.text[:500]}")
     resp.raise_for_status()
     tables = resp.json().get("logicalTables", [])
     if not tables:
@@ -75,7 +77,7 @@ def query(req: func.HttpRequest) -> func.HttpResponse:
 
         pat_value = get_pat_from_keyvault()
         token, site_id = get_tableau_token(TABLEAU_PAT_NAME, pat_value, TABLEAU_POD, TABLEAU_SITE)
-        logical_table_id = get_logical_table_id(token, TABLEAU_POD, site_id, DATASOURCE_LUID)
+        logical_table_id = get_logical_table_id(token, TABLEAU_POD, DATASOURCE_LUID)
         result = query_vds(token, TABLEAU_POD, DATASOURCE_LUID, logical_table_id, query_fields)
 
         return func.HttpResponse(

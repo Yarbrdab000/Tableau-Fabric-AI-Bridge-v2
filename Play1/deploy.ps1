@@ -22,32 +22,21 @@ $subscriptionId  = Read-Host "Azure Subscription ID"
 $resourceGroup   = Read-Host "Resource Group name"
 $functionAppName = Read-Host "Function App name (new, globally unique)"
 $keyVaultName    = Read-Host "Key Vault name (existing)"
-$kvSecretName    = Read-Host "Key Vault secret name (storing your Tableau PAT)"
+$kvSecretName    = Read-Host "Key Vault secret name (existing secret storing your Tableau PAT)"
 $tableauPod      = Read-Host "Tableau pod (e.g. 10ay.online.tableau.com)"
 $tableauSite     = Read-Host "Tableau site content URL slug"
 $tableauPatName  = Read-Host "Tableau PAT name"
-$tableauPatValue = Read-Host "Tableau PAT value" -AsSecureString
 $datasourceName  = Read-Host "Tableau datasource name"
-
-$patPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($tableauPatValue)
-)
 
 Write-Host ""
 Write-Host "Setting subscription..." -ForegroundColor Yellow
 az account set --subscription $subscriptionId
 
-# ── Store PAT in Key Vault ────────────────────────────────────────────────────
-Write-Host "Storing PAT in Key Vault..." -ForegroundColor Yellow
-az keyvault secret set `
-    --vault-name $keyVaultName `
-    --name $kvSecretName `
-    --value $patPlain | Out-Null
-Write-Host "PAT stored." -ForegroundColor Green
-
 # ── Resolve datasource LUID ───────────────────────────────────────────────────
 Write-Host ""
 Write-Host "Resolving datasource LUID..." -ForegroundColor Yellow
+
+$patPlain = az keyvault secret show --vault-name $keyVaultName --name $kvSecretName --query "value" -o tsv
 
 $signinBody = @{
     credentials = @{
@@ -61,6 +50,7 @@ $signinResp = Invoke-RestMethod `
     -Uri "https://$tableauPod/api/3.24/auth/signin" `
     -Method POST `
     -ContentType "application/json" `
+    -Headers @{ "Accept" = "application/json" } `
     -Body $signinBody
 
 $token  = $signinResp.credentials.token

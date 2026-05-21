@@ -14,26 +14,31 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
+  properties: {
+    allowSharedKeyAccess: false
+  }
 }
 
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: '${functionAppName}-plan'
   location: location
-  sku: { name: 'Y1', tier: 'Dynamic' }
-  properties: {}
+  sku: { name: 'EP1', tier: 'ElasticPremium' }
+  kind: 'linux'
+  properties: { reserved: true }
 }
 
 resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp'
+  kind: 'functionapp,linux'
   identity: { type: 'SystemAssigned' }
   properties: {
     serverFarmId: hostingPlan.id
     siteConfig: {
-      pythonVersion: '3.12'
+      linuxFxVersion: 'Python|3.12'
       appSettings: [
-        { name: 'AzureWebJobsStorage', value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value}' }
+        { name: 'AzureWebJobsStorage__accountName', value: storageAccountName }
+        { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
         { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'python' }
         { name: 'KV_URL', value: 'https://${keyVaultName}.vault.azure.net/' }
@@ -56,6 +61,16 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   scope: keyVault
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, functionApp.id, 'storage-blob-contributor')
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
     principalId: functionApp.identity.principalId
     principalType: 'ServicePrincipal'
   }
