@@ -3,54 +3,27 @@
   "info": {
     "title": "Tableau VDS Query API",
     "description": "Queries live Tableau data sources via the VizQL Data Service API.",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "servers": [
     {
-      "url": "YOUR_LOGIC_APP_TRIGGER_URL"
+      "url": "https://Test-Azure-func6.azurewebsites.net/api"
     }
   ],
   "paths": {
-    "/": {
+    "/query": {
       "post": {
         "operationId": "queryTableauData",
         "summary": "Query live Tableau data",
-        "description": "Queries the Tableau datasource configured in the Logic App. Use fieldCaption to specify fields and function to apply aggregation (SUM, AVG, COUNT, COUNTD, MIN, MAX, MEDIAN) or date truncation (YEAR, QUARTER, MONTH, WEEK, DAY).",
+        "description": "Queries the Tableau datasource configured in the Function App. Use fieldCaption to specify fields and function to apply aggregation (SUM, AVG, COUNT, COUNTD, MIN, MAX, MEDIAN) or date truncation (YEAR, QUARTER, MONTH, WEEK, DAY).",
         "parameters": [
           {
-            "name": "api-version",
+            "name": "code",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "default": "2016-10-01"
-            }
-          },
-          {
-            "name": "sp",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "/triggers/When_an_HTTP_request_is_received/run"
-            }
-          },
-          {
-            "name": "sv",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "1.0"
-            }
-          },
-          {
-            "name": "sig",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "default": "YOUR_LOGIC_APP_SIG"
+              "default": "YOUR_FUNCTION_KEY"
             }
           }
         ],
