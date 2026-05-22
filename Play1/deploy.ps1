@@ -101,23 +101,40 @@ az deployment group create `
 
 Write-Host "Infrastructure deployed." -ForegroundColor Green
 
+# ── Enable remote build ───────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "Enabling remote build..." -ForegroundColor Yellow
+az functionapp config appsettings set `
+    --name $functionAppName `
+    --resource-group $resourceGroup `
+    --settings "SCM_DO_BUILD_DURING_DEPLOYMENT=true" | Out-Null
+
 # ── Package and deploy Function code ─────────────────────────────────────────
 Write-Host ""
 Write-Host "Packaging Function code..." -ForegroundColor Yellow
 
 $funcDir = "$PSScriptRoot/function_app"
-$zipPath = "$PSScriptRoot/function_app.zip"
+$zipPath = "$PSScriptRoot/function_app_deploy.zip"
 
 if (Test-Path $zipPath) { Remove-Item $zipPath }
-Compress-Archive -Path "$funcDir/*" -DestinationPath $zipPath
 
-Write-Host "Deploying Function code..." -ForegroundColor Yellow
+Push-Location $funcDir
+zip -r $zipPath . | Out-Null
+Pop-Location
+
+Write-Host "Deploying Function code (remote build)..." -ForegroundColor Yellow
 az functionapp deployment source config-zip `
     --resource-group $resourceGroup `
     --name $functionAppName `
-    --src $zipPath | Out-Null
+    --src $zipPath `
+    --build-remote true
 
 Write-Host "Function code deployed." -ForegroundColor Green
+
+# ── Wait for function to initialize ──────────────────────────────────────────
+Write-Host ""
+Write-Host "Waiting for Function App to initialize (60 seconds)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 60
 
 # ── Get function URL ──────────────────────────────────────────────────────────
 Write-Host ""

@@ -41,6 +41,7 @@ resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
         { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
         { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'python' }
+        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: 'true' }
         { name: 'KV_URL', value: 'https://${keyVaultName}.vault.azure.net/' }
         { name: 'KV_SECRET_NAME', value: kvSecretName }
         { name: 'TABLEAU_POD', value: tableauPod }
